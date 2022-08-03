@@ -4,7 +4,6 @@ from gensim.models import Word2Vec
 import warnings
 warnings.filterwarnings('ignore')
 
-
 class Graph_embading:
     def __init__(self,graph):
         self.G = graph
