@@ -33,7 +33,12 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from numpy import mean
 from numpy import std
 from Graph_embading import Graph_embading
-
+from sklearn.metrics import accuracy_score
+import xgboost as xgb
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import RepeatedStratifiedKFold
+from numpy import mean
+from numpy import std
 def readData(data_name,dir_name):
     dir_path = dir_name + data_name+'/'
     dataset_path = dir_path + data_name +'.mat'
@@ -247,6 +252,26 @@ def fitted_cluster(data,cluster):
             count+=1
             
         return cluster_id
+#define function of Time Series Embedding
+def timeseries_embedding(embedding_graph,node_names,timesereis_MHAP,number_seg):
+    feature_list = []
+    embed_vector = embaded_graph.wv[node_names]
+    for i,data in enumerate(timesereis_MHAP):
+        #compare the name with word_list and take its embedding
+        #loop through segmant
+        segmant = [[] for i in range(number_seg)]
+        #print(len(data))
+        for m,seg in enumerate(data):
+            temp = [0 for i in range(len(embed_vector[0]))]
+            #each seg has mhaps
+            for k,mhap in enumerate(seg):
+                for j,node in enumerate(node_names):
+                    if(mhap == node):
+                        temp += embed_vector[j]
+                        break
+            segmant[m].append(list(temp))
+        feature_list.append(segmant)
+    return feature_list
 if __name__ == '__main__':
     run(sys.argv[1:])
     data_name = sys.argv[1:]
@@ -276,3 +301,49 @@ if __name__ == '__main__':
     cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list)
     G,id_layer,sample_cluster_mhap_ = visulization_traning.get_graph_MHAP(activation_layers,[8,40,120],cluster_central)
     sample_cluster_mhap = visulization_traning.get_segmant_MHAP(activation_layers,[8,40,120],cluster_central,9,10)
+    graph_embaded = Graph_embading(G)
+    graph_embaded.drwa_graph()
+    node_names = graph_embaded.get_node_list()
+    walks_nodes = graph_embaded.randome_walk_nodes(node_names)
+    #print(walks_nodes)
+    embaded_graph = graph_embaded.embed_graph(walks_nodes)
+    graph_embaded.plot_embaded_graph(embaded_graph,node_names)
+    new_feature = timeseries_embedding(graph_embaded,node_names,sample_cluster_mhap,9)
+    print("--- %s create embading seconds ---" % (time.time() - start_time))
+
+    start_time = time.time()
+    x_train_feature = []
+    for m,data in enumerate (new_feature):
+        segmant = []
+        for j,seg in enumerate(data):
+            segmant.append(seg[0])
+        x_train_feature.append(segmant)
+    print("--- %s create new featureseconds ---" % (time.time() - start_time))
+
+
+    start_time = time.time()
+    #we need to convert the time series to 200*(15*100) as 2d to use xgboost)
+    x_train_new = []
+    for i, data in enumerate (x_train_feature):
+        seg = []
+        for j in (data):
+            for k in j:
+                seg.append(k)
+        x_train_new.append(seg)
+
+    y_train =y_training_2
+    X_train, X_test, y_train, y_test = train_test_split(x_train_new, y_training_2, test_size=0.8)
+    y_train= np.argmax(y_train, axis=1)
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    evallist = [(dtrain, 'train')]
+    num_round = 100
+    param = {'max_depth': 5, 'eta': 1, 'objective': 'multi:softprob','num_class': nb_classes}
+    bst = xgb.train(param, dtrain, num_round, evallist)
+    dtest = xgb.DMatrix(X_test, label=y_test)
+    ypred = bst.predict(dtest)
+    y_pre =[]
+    for i in ypred:
+        y_pre.append(np.argmax(i))
+    y_test= np.argmax(y_test, axis=1)
+    
+    accuracy_score(y_test, y_pre)
