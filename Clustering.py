@@ -36,7 +36,10 @@ class Clustering:
                         min_seq = min(seq)
                         i = 0
                         while (i < len(seq)):
-                            seq[i] = (seq[i] - min_seq) / (max_seq - min_seq)
+                            if((max_seq - min_seq)==0):
+                                seq[i] = 0
+                            else:
+                                seq[i] = (seq[i] - min_seq) / (max_seq - min_seq)
                             i += 1
                     else:
                         data.pop(idx)
@@ -149,19 +152,16 @@ class Clustering:
         clustering = OPTICS(min_samples=num_clusters).fit(data)
         return clustering
     
+    def do_cluster(self,j,cluster_lists,cluster_number,layer_len):
+        return (self.K_shape_clustering(cluster_number[j],cluster_lists[j],layer_len[j]))
+    
     def cluster_sequence_data(self,cluster_number,layer_len,cluser_data_pre_list1):
         # scale the data between 0 and 1
         cluster_centers = []
         cluster_lists = cluser_data_pre_list1
-        
         #loop thriugh the periods for each CNN layer
-        count = 0
-        for layer in (cluster_lists):
-            #cluster_centers.append(self.hierarchical_cluster(cluster_number[count],layer))
-            #cluster_centers.append(self.k_mean_clustering(cluster_number[count],layer))
-            cluster_centers.append(self.K_shape_clustering(cluster_number[count],layer,layer_len[count]))
-            #cluster_centers.append(self.DBscan_cluster(cluster_number[count],layer))
-            #cluster_centers.append(self.optic_cluster(cluster_number[count],layer))
-            count +=1
-        
-        return  cluster_centers
+        results = []
+        #loop through each training sample
+        results = Parallel(n_jobs=3,backend="threading")(delayed(self.do_cluster)
+                (j,cluster_lists,cluster_number,layer_len) for j in range(len(cluster_lists)))        
+        return  results
