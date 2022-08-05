@@ -63,7 +63,7 @@ class Graph_embading:
                 color_map.append('red') 
             else:
                 color_map.append('black')
-        nx.draw_networkx_nodes(self.G, pos,node_size=256,node_color=color_map)
+        nx.draw_networkx_nodes(self.G, pos,node_size=100,node_color=color_map)
         nx.draw_networkx_edges(self.G, pos,)
         #nx.draw_networkx_edges(self.G, pos, width=edgewidth,edge_color=edgewidth)
         
@@ -73,7 +73,7 @@ class Graph_embading:
         edgewidth = [ d['weight'] for (u,v,d) in G.edges(data=True)]
         # layout
         pos = nx.spring_layout(G)
-        nx.draw_networkx_nodes(G, pos,node_size=256)
+        nx.draw_networkx_nodes(G, pos,node_size=100)
         nx.draw_networkx_edges(G, pos,)
         #nx.draw_networkx_edges(G, pos, width=edgewidth,edge_color=edgewidth)
         
