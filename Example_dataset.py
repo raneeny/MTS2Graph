@@ -300,7 +300,7 @@ if __name__ == '__main__':
     clustering = Clustering(cluser_data_pre_list)
     cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list)
     G,id_layer,sample_cluster_mhap_ = visulization_traning.get_graph_MHAP(activation_layers,[8,40,120],cluster_central)
-    sample_cluster_mhap = visulization_traning.get_segmant_MHAP(activation_layers,[8,40,120],cluster_central,9,10)
+    sample_cluster_mhap = visulization_traning.get_segmant_MHAP(activation_layers,[8,40,120],cluster_central,9,20)
     graph_embaded = Graph_embading(G)
     graph_embaded.drwa_graph()
     node_names = graph_embaded.get_node_list()
