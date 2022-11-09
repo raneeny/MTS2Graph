@@ -302,27 +302,31 @@ if __name__ == '__main__':
     G,id_layer,sample_cluster_mhap_ = visulization_traning.get_graph_MHAP(activation_layers,[8,40,120],cluster_central)
     sample_cluster_mhap = visulization_traning.get_segmant_MHAP(activation_layers,[8,40,120],cluster_central,9,10)
     graph_embaded = Graph_embading(G)
-    graph_embaded.drwa_graph()
     node_names = graph_embaded.get_node_list()
     walks_nodes = graph_embaded.randome_walk_nodes(node_names)
-    #print(walks_nodes)
     embaded_graph = graph_embaded.embed_graph(walks_nodes)
-    graph_embaded.plot_embaded_graph(embaded_graph,node_names)
-    new_feature = timeseries_embedding(graph_embaded,node_names,sample_cluster_mhap,9)
-    print("--- %s create embading seconds ---" % (time.time() - start_time))
+    #####
+    visulization_traning = HighlyActivated(model,train_model,x_test,y_test,nb_classes,netLayers=3)
+    activation_layers = visulization_traning.Activated_filters(example_id=1)
+    period_active,threshold = visulization_traning.get_index_MHAP(activation_layers,kernal_size=[8,5,3])
+    g_l,sample_cluster_mhap_test = visulization_traning.get_graph_MHAP(activation_layers,[8,40,120],cluster_central,threshold,6,10)
+    #here merge all the data and then split
+    y_test = np.argmax(y_test, axis=1)
+    sample_cluster_mhap1 = sample_cluster_mhap
+    sample_cluster_mhap = np.concatenate((sample_cluster_mhap1, sample_cluster_mhap_test), axis=0)
+    y_test1 = np.argmax(y_training, axis=1)
+    y_test = np.concatenate((y_test1, y_test), axis=0)
+    
+    y_true = y_test
+    new_feature = timeseries_embedding(embaded_graph,node_names,sample_cluster_mhap,6)
+    x_train_feature = [] 
 
-    start_time = time.time()
-    x_train_feature = []
     for m,data in enumerate (new_feature):
         segmant = []
         for j,seg in enumerate(data):
             segmant.append(seg[0])
         x_train_feature.append(segmant)
-    print("--- %s create new featureseconds ---" % (time.time() - start_time))
 
-
-    start_time = time.time()
-    #we need to convert the time series to 200*(15*100) as 2d to use xgboost)
     x_train_new = []
     for i, data in enumerate (x_train_feature):
         seg = []
@@ -330,20 +334,34 @@ if __name__ == '__main__':
             for k in j:
                 seg.append(k)
         x_train_new.append(seg)
-
-    y_train =y_training_2
-    X_train, X_test, y_train, y_test = train_test_split(x_train_new, y_training_2, test_size=0.8)
-    y_train= np.argmax(y_train, axis=1)
-    dtrain = xgb.DMatrix(X_train, label=y_train)
-    evallist = [(dtrain, 'train')]
-    num_round = 100
-    param = {'max_depth': 5, 'eta': 1, 'objective': 'multi:softprob','num_class': nb_classes}
-    bst = xgb.train(param, dtrain, num_round, evallist)
-    dtest = xgb.DMatrix(X_test, label=y_test)
-    ypred = bst.predict(dtest)
-    y_pre =[]
-    for i in ypred:
-        y_pre.append(np.argmax(i))
-    y_test= np.argmax(y_test, axis=1)
+    y_train =y_true
+    X_train, X_test, y_train, y_test = train_test_split(x_train_new, y_true, test_size=0.20)
+    model = xgb.XGBClassifier()
+    cv = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=1)
+    n_scores = cross_val_score(model, x_train_new, y_true, scoring='accuracy', cv=cv, n_jobs=-1)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    balance_acc = balanced_accuracy_score(y_test, y_pred)
+    accuracy = accuracy_score(y_test, y_pred)
+    f1_sc = f1_score(y_test, y_pred, average='weighted')
+    pres_val = precision_score(y_test, y_pred,average='weighted')
+    print(max(n_scores))
+    #print(accuracy)
+    print(balance_acc)
+    print(f1_sc)
+    print(pres_val)
     
-    accuracy_score(y_test, y_pre)
+    
+    
+    
+    
+    
+    graph_embaded = Graph_embading(G)
+    graph_embaded.drwa_graph()
+    node_names = graph_embaded.get_node_list()
+    walks_nodes = graph_embaded.randome_walk_nodes(node_names)
+    #print(walks_nodes)
+    embaded_graph = graph_embaded.embed_graph(walks_nodes)
+    graph_embaded.plot_embaded_graph(embaded_graph,node_names)
+    new_feature = timeseries_embedding(graph_embaded,node_names,sample_cluster_mhap,9)
+
