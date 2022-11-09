@@ -351,17 +351,3 @@ if __name__ == '__main__':
     print(f1_sc)
     print(pres_val)
     
-    
-    
-    
-    
-    
-    graph_embaded = Graph_embading(G)
-    graph_embaded.drwa_graph()
-    node_names = graph_embaded.get_node_list()
-    walks_nodes = graph_embaded.randome_walk_nodes(node_names)
-    #print(walks_nodes)
-    embaded_graph = graph_embaded.embed_graph(walks_nodes)
-    graph_embaded.plot_embaded_graph(embaded_graph,node_names)
-    new_feature = timeseries_embedding(graph_embaded,node_names,sample_cluster_mhap,9)
-
