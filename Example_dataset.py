@@ -11,7 +11,7 @@ from ConvNet_Model import ConvNet
 import numpy as np
 import tensorflow.keras as keras
 import sys, getopt
-from High_Activated_Filters_CNN import HighlyActivated
+from High_Activated_Filters_CNNcopy import HighlyActivated
 import pandas
 from itertools import *
 from  functools import *
@@ -25,51 +25,75 @@ from scipy.interpolate import interp1d
 import seaborn as sns
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
-np.random.seed(0)
-import networkx as nx
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
 import xgboost as xgb
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import RepeatedStratifiedKFold
-from numpy import mean
-from numpy import std
 from Graph_embading import Graph_embading
-from sklearn.metrics import accuracy_score
 import xgboost as xgb
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from numpy import mean
 from numpy import std
+import pandas as pd 
+from joblib import Parallel, delayed
+import networkx as nx
+import csv
+import time
+np.random.seed(0)
+#import deepwalk
 def readData(data_name,dir_name):
     dir_path = dir_name + data_name+'/'
     dataset_path = dir_path + data_name +'.mat'
-
+    
     ##read data and process it
     prepare_data = ReadData()
-    prepare_data.data_preparation(dataset_path, dir_path)
-    datasets_dict = prepare_data.read_dataset(dir_path,data_name)
-    x_train = datasets_dict[data_name][0]
-    y_train = datasets_dict[data_name][1]
-    x_test = datasets_dict[data_name][2]
-    y_test = datasets_dict[data_name][3]
-    x_train, x_test = prepare_data.z_norm(x_train, x_test)
+    if(data_name == "HAR"):
+        dataset_path = dir_name + data_name +'/train.pt'
+        x_training = torch.load(dataset_path)
+        x_train = x_training['samples']
+        y_train = x_training['labels']
+        dataset_path = dir_name + data_name +'/train.pt'
+        x_testing = torch.load(dataset_path)
+        x_test = x_testing['samples']
+        y_test = x_testing['labels']
+        x_train = x_train.cpu().detach().numpy()
+        y_train = y_train.cpu().detach().numpy()
+        x_test = x_test.cpu().detach().numpy()
+        y_test = y_test.cpu().detach().numpy()
+        #reshape array(num_sample,ts_len,dim)
+        x_train = x_train.reshape(x_train.shape[0], x_train.shape[2], x_train.shape[1])
+        x_test = x_test.reshape(x_test.shape[0],x_test.shape[2], x_test.shape[1])
+    elif(data_name == "PAMAP2"):
+        dataset_path = dir_name + data_name +'/PTdict_list.npy'
+        x_data = np.load(dataset_path)
+        dataset_path = dir_name + data_name +'/arr_outcomes.npy'
+        y_data = np.load(dataset_path)
+        split_len = int(len(x_data)*0.9)
+        x_train,x_test  = x_data[:split_len,:], x_data[split_len:,:]
+        y_train,y_test  = y_data[:split_len,:], y_data[split_len:,:]
+        
+    else:
+        prepare_data.data_preparation(dataset_path, dir_path)
+        datasets_dict = prepare_data.read_dataset(dir_path,data_name)
+        x_train = datasets_dict[data_name][0]
+        y_train = datasets_dict[data_name][1]
+        x_test = datasets_dict[data_name][2]
+        y_test = datasets_dict[data_name][3]
+        x_train, x_test = prepare_data.z_norm(x_train, x_test)
+    
     nb_classes = prepare_data.num_classes(y_train,y_test)
     y_train, y_test, y_true = prepare_data.on_hot_encode(y_train,y_test)
     x_train, x_test, input_shape = prepare_data.reshape_x(x_train,x_test)
-    #create train validation subvalidation sub set
-    #x_training, x_validation = x_train[:90,:], x_train[90:,:]
-    #y_training, y_validation = y_train[:90,:], y_train[90:,:]
     x_training = x_train
     y_training = y_train
-    #x_new = np.concatenate((x_training, x_validation), axis=0)
+ 
     x_new1 = np.concatenate((x_train, x_test), axis=0)
-    #y_new = np.concatenate((y_training, y_validation), axis=0)
     y_new1 = np.concatenate((y_train, y_test), axis=0)
     x_training, x_validation, y_training, y_validation = train_test_split(x_new1, y_new1, test_size=0.20,shuffle=True)
-
     x_validation,x_test,y_validation,y_test = train_test_split(x_validation, y_validation, test_size=0.50,shuffle=True)
-
-    #y_training= np.argmax(y_training, axis=1)
-    y_true= np.argmax(y_test, axis=1)
+    print(x_training.shape)
+    print(x_validation.shape)
+    print(x_test.shape)
     return x_training, x_validation, x_test, y_training, y_validation, y_true,y_test, input_shape,nb_classes
 
 
@@ -90,12 +114,12 @@ def predect(y_true,x_test,model,train_model,dimention_deactivated):
     y_pred = model.predict(x_test)
     y_pred = np.argmax(y_pred, axis=1)
     keras.backend.clear_session()
-    file = open('../Results/file_name.csv','a')
-    file.write(str(dimention_deactivated))
-    file.close()
+    #file = open('../Results/file_name.csv','a')
+    #file.write(str(dimention_deactivated))
+    #file.close()
     df_metrics = train_model.calculate_metrics(y_true, y_pred, 0.0)
     df = pandas.DataFrame(df_metrics).transpose()
-    df.to_csv('../Results/file_name.csv', mode='a')
+    #df.to_csv('../Results/file_name.csv', mode='a')
     return y_pred
     
 def visulize_active_filter(model,x_test,y_true,nb_classes,train_model,cluster_centers,netLayers=3):
@@ -245,6 +269,7 @@ def fitted_cluster(data,cluster):
         count = 0
         for i in (cluster):
             clu_nor = normilization(i)
+            #print(clu_nor)
             dist = distance.euclidean(data,clu_nor)
             if(dist < mini):
                 cluster_id = count
@@ -252,10 +277,25 @@ def fitted_cluster(data,cluster):
             count+=1
             
         return cluster_id
-#define function of Time Series Embedding
+
+
+def downsample_to_proportion(rows, proportion=1):
+        i = 0
+        new_data = []
+        #new_data.append(rows[0])
+        new_data.append(rows[0])
+        k = 0
+        for i in (rows):
+            if(k == proportion):
+                new_data.append(i)
+                k = 0
+            k+=1
+        return new_data 
+
+
 def timeseries_embedding(embedding_graph,node_names,timesereis_MHAP,number_seg):
     feature_list = []
-    embed_vector = embaded_graph.wv[node_names]
+    embed_vector = embedding_graph.wv[node_names]
     for i,data in enumerate(timesereis_MHAP):
         #compare the name with word_list and take its embedding
         #loop through segmant
@@ -272,82 +312,148 @@ def timeseries_embedding(embedding_graph,node_names,timesereis_MHAP,number_seg):
             segmant[m].append(list(temp))
         feature_list.append(segmant)
     return feature_list
+
+def run(argv):
+    data_name = ''
+    dir_name = ''
+    try:
+      opts, args = getopt.getopt(argv,"hf:d:",["file_name=","directory_name="])
+    except getopt.GetoptError:
+      print ('Train_example_dataset.py -f <file name> -d <directory name>')
+      sys.exit(2)
+    print (opts)
+    for opt, arg in opts:
+      if opt == '-h':
+         print ('Train_example_dataset.py -f <file name> -d <directory name>')
+         sys.exit()
+      elif opt in ("-f", "--file"):
+         data_name = arg
+      elif opt in ("-d", "--directory"):
+         dir_name = arg
+     
+    #data_sets = ['ArabicDigits','AUSLAN','CharacterTrajectories','CMUsubject16','ECG','JapaneseVowels','KickvsPunch','Libras','NetFlow','PEMS','UWave','Wafer','WalkvsRun']
+    #data_sets = ['Wafer','UWave','AUSLAN','HAR','ArabicDigits','NetFlow','PAMAP2']
+    data_sets = ['UWave','AUSLAN','HAR','ArabicDigits','NetFlow','PAMAP2']
+    for i in data_sets:
+        #x_training, x_validation, x_test, y_training, y_validation, y_true,input_shape, nb_classes = readData(i,dir_name)
+        dir_name = 'mtsdata/'
+        data_name = i
+        dir_name = '../../Multivision-framework/Data/mtsdata/'
+        x_training, x_validation, x_test, y_training, y_validation, y_true,y_test, input_shape,nb_classes = readData(data_name,dir_name)
+        start_time = time.time()
+        model,train_model = trainModel(x_training, x_validation, y_training, y_validation,input_shape, nb_classes)
+        #y_pred = predect(y_true,x_test,model,train_model,'alls')
+        time_data = []
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        #######
+        visulization_traning = HighlyActivated(model,train_model,x_training,y_training,nb_classes,netLayers=3)
+        start_time = time.time()
+        activation_layers = visulization_traning.Activated_filters(example_id=1)
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        start_time = time.time()
+        period_active,layer_mhaps,index_mhaps = visulization_traning.get_index_clustering_MHAP(activation_layers,kernal_size=[8,5,3])
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        ###################
+        #now cluster the MHAP for each layer
+        #put the data of each layer in one array [[l1],[l2],[l3]]
+        cluser_data_pre_list = []
+        cluser_data_pre_list = []
+        filter_lists = [[] for i in range(3)]
+        for i in range(len(period_active)):
+            for j in range(len(period_active[i])):
+                #for k in range(len(period_active[i][j])):np.array(layer_mhaps[j][l][f][d]).tolist()
+                filter_lists[i].append(np.array(period_active[i][j]).tolist())
+        start_time = time.time()
+        cluser_data_pre_list.append([x[0] for x in filter_lists[0] if x])
+        cluser_data_pre_list.append([x[0] for x in filter_lists[1] if x])
+        cluser_data_pre_list.append([x[0] for x in filter_lists[2] if x])
+        
+        print(len(cluser_data_pre_list[0]))
+        print(len(cluser_data_pre_list[1]))
+        print(len(cluser_data_pre_list[2]))
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        cluser_data_pre_list1 = []
+        cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[0], 100))
+        cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[1], 100))
+        cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[2], 100))
+        cluser_data_pre_list1 = np.array(cluser_data_pre_list1)
+        #cluser_data_pre_list1 = np.array(cluser_data_pre_list)
+        start_time = time.time()
+        clustering = Clustering(cluser_data_pre_list1)
+        #cluser_data_pre_list1 = clustering.scale_data(cluser_data_pre_list1)
+        clustering = Clustering(cluser_data_pre_list1)
+        cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list1)
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        ###############
+        start_time = time.time()
+        G,node_layer_name = visulization_traning.generate_MHAP_evl_graph(cluster_central,layer_mhaps,index_mhaps)
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        name = 'result/' +data_name+".gpickle"
+        nx.write_gpickle(G, name)
+        ############
+        start_time = time.time()
+        sample_cluster_mhap = visulization_traning.get_segmant_MHAP([8,5,3],node_layer_name,index_mhaps,7,10)
+        time_data.append(time.time() - start_time)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        #######################
+        graph_embaded = Graph_embading(G)
+        #graph_embaded.drwa_graph()
+        node_names = graph_embaded.get_node_list()
+        walks_nodes = graph_embaded.randome_walk_nodes(node_names)
+        #print(walks_nodes)
+        embaded_graph = graph_embaded.embed_graph(walks_nodes)
+        graph_embaded.plot_embaded_graph(embaded_graph,node_names)
+        ###########
+        start_time = time.time()
+        new_feature = timeseries_embedding(embaded_graph,node_names,sample_cluster_mhap,7)
+        time_data.append(time.time() - start_time)
+        print("--- %s create embading seconds ---" % (time.time() - start_time))
+        
+        start_time = time.time()
+        x_train_feature = []
+        for m,data in enumerate (new_feature):
+            segmant = []
+            for j,seg in enumerate(data):
+                segmant.append(seg[0])
+            x_train_feature.append(segmant)
+        time_data.append(time.time() - start_time)
+        print("--- %s create new featureseconds ---" % (time.time() - start_time))
+        start_time = time.time()
+        #we need to convert the time series to 200*(15*100) as 2d to use xgboost)
+        x_train_new = []
+        for i, data in enumerate (x_train_feature):
+            seg = []
+            for j in (data):
+                for k in j:
+                    seg.append(k)
+            x_train_new.append(seg)
+        time_data.append(time.time() - start_time)
+        print("--- %s create train featureseconds ---" % (time.time() - start_time))
+        #XGboost with 5 fold crosss validation
+        
+        y_training_1= np.argmax(y_training, axis=1)
+        model = xgb.XGBClassifier()
+        # evaluate the model
+        start_time = time.time()
+        cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+        n_scores = cross_val_score(model, x_train_new, y_training_1, scoring='accuracy', cv=cv, n_jobs=-1)
+        print('Accuracy: %.3f (%.3f)' % (max(n_scores), std(n_scores)))
+        time_data.append(time.time() - start_time)
+        print("--- %s train xGboot featureseconds ---" % (time.time() - start_time))
+        
+        ##write for each dataset a file with accuercy and the time
+        name ='result/'+ data_name+".csv"
+        with open(name,'a') as fd:
+            wr = csv.writer(fd, dialect='excel')
+            wr.writerow(time_data)
+            wr.writerow(n_scores)
+    
+        sys.modules[__name__].__dict__.clear()
 if __name__ == '__main__':
     run(sys.argv[1:])
-    data_name = sys.argv[1:]
-    dir_name = sys.argv[2:]
-    x_training, x_validation, x_test, y_training, y_validation, y_true,y_test, input_shape,nb_classes = readData(data_name,dir_name)
-    start_time = time.time()
-    model,train_model = trainModel(x_training, x_validation, y_training, y_validation,input_shape, nb_classes)
-    y_pred = predect(y_true,x_test,model,train_model,'alls')
-    visulization_traning = HighlyActivated(model,train_model,x_training,y_training,nb_classes,netLayers=3)
-    start_time = time.time()
-    activation_layers = visulization_traning.Activated_filters(example_id=1)
-    period_active,thresholds = visulization_traning.get_index_MHAP(activation_layers,kernal_size=[8,5,3])
-    cluser_data_pre_list = []
-    cluser_data_pre_list = []
-    filter_lists = [[] for i in range(3)]
-    for i in range(len(period_active)):
-        for j in range(len(period_active[i])):
-            for k in range(len(period_active[i][j])):
-                filter_lists[j].append(period_active[i][j][k])
-    start_time = time.time()
-    cluser_data_pre_list.append([x for x in filter_lists[0] if x])
-    cluser_data_pre_list.append([x for x in filter_lists[1] if x])
-    cluser_data_pre_list.append([x for x in filter_lists[2] if x])
-    clustering = Clustering(cluser_data_pre_list)
-    cluser_data_pre_list1 = clustering.scale_data(cluser_data_pre_list)
-    clustering = Clustering(cluser_data_pre_list)
-    cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list)
-    G,id_layer,sample_cluster_mhap_ = visulization_traning.get_graph_MHAP(activation_layers,[8,40,120],cluster_central)
-    sample_cluster_mhap = visulization_traning.get_segmant_MHAP(activation_layers,[8,40,120],cluster_central,9,10)
-    graph_embaded = Graph_embading(G)
-    node_names = graph_embaded.get_node_list()
-    walks_nodes = graph_embaded.randome_walk_nodes(node_names)
-    embaded_graph = graph_embaded.embed_graph(walks_nodes)
-    #####
-    visulization_traning = HighlyActivated(model,train_model,x_test,y_test,nb_classes,netLayers=3)
-    activation_layers = visulization_traning.Activated_filters(example_id=1)
-    period_active,threshold = visulization_traning.get_index_MHAP(activation_layers,kernal_size=[8,5,3])
-    g_l,sample_cluster_mhap_test = visulization_traning.get_graph_MHAP(activation_layers,[8,40,120],cluster_central,threshold,6,10)
-    #here merge all the data and then split
-    y_test = np.argmax(y_test, axis=1)
-    sample_cluster_mhap1 = sample_cluster_mhap
-    sample_cluster_mhap = np.concatenate((sample_cluster_mhap1, sample_cluster_mhap_test), axis=0)
-    y_test1 = np.argmax(y_training, axis=1)
-    y_test = np.concatenate((y_test1, y_test), axis=0)
-    
-    y_true = y_test
-    new_feature = timeseries_embedding(embaded_graph,node_names,sample_cluster_mhap,6)
-    x_train_feature = [] 
-
-    for m,data in enumerate (new_feature):
-        segmant = []
-        for j,seg in enumerate(data):
-            segmant.append(seg[0])
-        x_train_feature.append(segmant)
-
-    x_train_new = []
-    for i, data in enumerate (x_train_feature):
-        seg = []
-        for j in (data):
-            for k in j:
-                seg.append(k)
-        x_train_new.append(seg)
-    y_train =y_true
-    X_train, X_test, y_train, y_test = train_test_split(x_train_new, y_true, test_size=0.20)
-    model = xgb.XGBClassifier()
-    cv = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=1)
-    n_scores = cross_val_score(model, x_train_new, y_true, scoring='accuracy', cv=cv, n_jobs=-1)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    balance_acc = balanced_accuracy_score(y_test, y_pred)
-    accuracy = accuracy_score(y_test, y_pred)
-    f1_sc = f1_score(y_test, y_pred, average='weighted')
-    pres_val = precision_score(y_test, y_pred,average='weighted')
-    print(max(n_scores))
-    #print(accuracy)
-    print(balance_acc)
-    print(f1_sc)
-    print(pres_val)
-    
