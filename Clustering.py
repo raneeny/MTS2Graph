@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Dec 11 11:43:54 2020
-
-@author: Raneen_new
 """
 
 from matplotlib import pyplot
@@ -20,7 +18,7 @@ from scipy.cluster.hierarchy import fcluster
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import OPTICS
-
+from joblib import Parallel, delayed
 class Clustering:
     def __init__(self,cluster_lists):
         self.cluster_lists = cluster_lists
@@ -36,10 +34,7 @@ class Clustering:
                         min_seq = min(seq)
                         i = 0
                         while (i < len(seq)):
-                            if((max_seq - min_seq)==0):
-                                seq[i] = 0
-                            else:
-                                seq[i] = (seq[i] - min_seq) / (max_seq - min_seq)
+                            seq[i] = (seq[i] - min_seq) / (max_seq - min_seq)
                             i += 1
                     else:
                         data.pop(idx)
@@ -153,7 +148,8 @@ class Clustering:
         return clustering
     
     def do_cluster(self,j,cluster_lists,cluster_number,layer_len):
-        return (self.K_shape_clustering(cluster_number[j],cluster_lists[j],layer_len[j]))
+        #return (self.K_shape_clustering(cluster_number[j],cluster_lists[j],layer_len[j]))
+        return (self.k_mean_clustering(cluster_number[j],cluster_lists[j]))
     
     def cluster_sequence_data(self,cluster_number,layer_len,cluser_data_pre_list1):
         # scale the data between 0 and 1
