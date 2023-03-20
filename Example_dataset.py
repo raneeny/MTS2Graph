@@ -333,127 +333,127 @@ def run(argv):
      
     #data_sets = ['ArabicDigits','AUSLAN','CharacterTrajectories','CMUsubject16','ECG','JapaneseVowels','KickvsPunch','Libras','NetFlow','PEMS','UWave','Wafer','WalkvsRun']
     #data_sets = ['Wafer','UWave','AUSLAN','HAR','ArabicDigits','NetFlow','PAMAP2']
-    data_sets = ['UWave','AUSLAN','HAR','ArabicDigits','NetFlow','PAMAP2']
-    for i in data_sets:
+    #data_sets = ['UWave','AUSLAN','HAR','ArabicDigits','NetFlow','PAMAP2']
+    #for i in data_sets:
         #x_training, x_validation, x_test, y_training, y_validation, y_true,input_shape, nb_classes = readData(i,dir_name)
-        dir_name = 'mtsdata/'
-        data_name = i
-        dir_name = '../../Multivision-framework/Data/mtsdata/'
-        x_training, x_validation, x_test, y_training, y_validation, y_true,y_test, input_shape,nb_classes = readData(data_name,dir_name)
-        start_time = time.time()
-        model,train_model = trainModel(x_training, x_validation, y_training, y_validation,input_shape, nb_classes)
-        #y_pred = predect(y_true,x_test,model,train_model,'alls')
-        time_data = []
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        #######
-        visulization_traning = HighlyActivated(model,train_model,x_training,y_training,nb_classes,netLayers=3)
-        start_time = time.time()
-        activation_layers = visulization_traning.Activated_filters(example_id=1)
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        start_time = time.time()
-        period_active,layer_mhaps,index_mhaps = visulization_traning.get_index_clustering_MHAP(activation_layers,kernal_size=[8,5,3])
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        ###################
-        #now cluster the MHAP for each layer
-        #put the data of each layer in one array [[l1],[l2],[l3]]
-        cluser_data_pre_list = []
-        cluser_data_pre_list = []
-        filter_lists = [[] for i in range(3)]
-        for i in range(len(period_active)):
-            for j in range(len(period_active[i])):
-                #for k in range(len(period_active[i][j])):np.array(layer_mhaps[j][l][f][d]).tolist()
-                filter_lists[i].append(np.array(period_active[i][j]).tolist())
-        start_time = time.time()
-        cluser_data_pre_list.append([x[0] for x in filter_lists[0] if x])
-        cluser_data_pre_list.append([x[0] for x in filter_lists[1] if x])
-        cluser_data_pre_list.append([x[0] for x in filter_lists[2] if x])
-        
-        print(len(cluser_data_pre_list[0]))
-        print(len(cluser_data_pre_list[1]))
-        print(len(cluser_data_pre_list[2]))
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        cluser_data_pre_list1 = []
-        cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[0], 100))
-        cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[1], 100))
-        cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[2], 100))
-        cluser_data_pre_list1 = np.array(cluser_data_pre_list1)
-        #cluser_data_pre_list1 = np.array(cluser_data_pre_list)
-        start_time = time.time()
-        clustering = Clustering(cluser_data_pre_list1)
-        #cluser_data_pre_list1 = clustering.scale_data(cluser_data_pre_list1)
-        clustering = Clustering(cluser_data_pre_list1)
-        cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list1)
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        ###############
-        start_time = time.time()
-        G,node_layer_name = visulization_traning.generate_MHAP_evl_graph(cluster_central,layer_mhaps,index_mhaps)
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        name = 'result/' +data_name+".gpickle"
-        nx.write_gpickle(G, name)
-        ############
-        start_time = time.time()
-        sample_cluster_mhap = visulization_traning.get_segmant_MHAP([8,5,3],node_layer_name,index_mhaps,7,10)
-        time_data.append(time.time() - start_time)
-        print("--- %s seconds ---" % (time.time() - start_time))
-        #######################
-        graph_embaded = Graph_embading(G)
-        #graph_embaded.drwa_graph()
-        node_names = graph_embaded.get_node_list()
-        walks_nodes = graph_embaded.randome_walk_nodes(node_names)
-        #print(walks_nodes)
-        embaded_graph = graph_embaded.embed_graph(walks_nodes)
-        graph_embaded.plot_embaded_graph(embaded_graph,node_names)
-        ###########
-        start_time = time.time()
-        new_feature = timeseries_embedding(embaded_graph,node_names,sample_cluster_mhap,7)
-        time_data.append(time.time() - start_time)
-        print("--- %s create embading seconds ---" % (time.time() - start_time))
-        
-        start_time = time.time()
-        x_train_feature = []
-        for m,data in enumerate (new_feature):
-            segmant = []
-            for j,seg in enumerate(data):
-                segmant.append(seg[0])
-            x_train_feature.append(segmant)
-        time_data.append(time.time() - start_time)
-        print("--- %s create new featureseconds ---" % (time.time() - start_time))
-        start_time = time.time()
-        #we need to convert the time series to 200*(15*100) as 2d to use xgboost)
-        x_train_new = []
-        for i, data in enumerate (x_train_feature):
-            seg = []
-            for j in (data):
-                for k in j:
-                    seg.append(k)
-            x_train_new.append(seg)
-        time_data.append(time.time() - start_time)
-        print("--- %s create train featureseconds ---" % (time.time() - start_time))
-        #XGboost with 5 fold crosss validation
-        
-        y_training_1= np.argmax(y_training, axis=1)
-        model = xgb.XGBClassifier()
-        # evaluate the model
-        start_time = time.time()
-        cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
-        n_scores = cross_val_score(model, x_train_new, y_training_1, scoring='accuracy', cv=cv, n_jobs=-1)
-        print('Accuracy: %.3f (%.3f)' % (max(n_scores), std(n_scores)))
-        time_data.append(time.time() - start_time)
-        print("--- %s train xGboot featureseconds ---" % (time.time() - start_time))
-        
-        ##write for each dataset a file with accuercy and the time
-        name ='result/'+ data_name+".csv"
-        with open(name,'a') as fd:
-            wr = csv.writer(fd, dialect='excel')
-            wr.writerow(time_data)
-            wr.writerow(n_scores)
+    #dir_name = 'mtsdata/'
+    #data_name = i
+    #dir_name = '../../Multivision-framework/Data/mtsdata/'
+    x_training, x_validation, x_test, y_training, y_validation, y_true,y_test, input_shape,nb_classes = readData(data_name,dir_name)
+    start_time = time.time()
+    model,train_model = trainModel(x_training, x_validation, y_training, y_validation,input_shape, nb_classes)
+    #y_pred = predect(y_true,x_test,model,train_model,'alls')
+    time_data = []
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    #######
+    visulization_traning = HighlyActivated(model,train_model,x_training,y_training,nb_classes,netLayers=3)
+    start_time = time.time()
+    activation_layers = visulization_traning.Activated_filters(example_id=1)
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    start_time = time.time()
+    period_active,layer_mhaps,index_mhaps = visulization_traning.get_index_clustering_MHAP(activation_layers,kernal_size=[8,5,3])
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    ###################
+    #now cluster the MHAP for each layer
+    #put the data of each layer in one array [[l1],[l2],[l3]]
+    cluser_data_pre_list = []
+    cluser_data_pre_list = []
+    filter_lists = [[] for i in range(3)]
+    for i in range(len(period_active)):
+        for j in range(len(period_active[i])):
+            #for k in range(len(period_active[i][j])):np.array(layer_mhaps[j][l][f][d]).tolist()
+            filter_lists[i].append(np.array(period_active[i][j]).tolist())
+    start_time = time.time()
+    cluser_data_pre_list.append([x[0] for x in filter_lists[0] if x])
+    cluser_data_pre_list.append([x[0] for x in filter_lists[1] if x])
+    cluser_data_pre_list.append([x[0] for x in filter_lists[2] if x])
     
-        sys.modules[__name__].__dict__.clear()
+    print(len(cluser_data_pre_list[0]))
+    print(len(cluser_data_pre_list[1]))
+    print(len(cluser_data_pre_list[2]))
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    cluser_data_pre_list1 = []
+    cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[0], 100))
+    cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[1], 100))
+    cluser_data_pre_list1.append(downsample_to_proportion(cluser_data_pre_list[2], 100))
+    cluser_data_pre_list1 = np.array(cluser_data_pre_list1)
+    #cluser_data_pre_list1 = np.array(cluser_data_pre_list)
+    start_time = time.time()
+    clustering = Clustering(cluser_data_pre_list1)
+    #cluser_data_pre_list1 = clustering.scale_data(cluser_data_pre_list1)
+    clustering = Clustering(cluser_data_pre_list1)
+    cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list1)
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    ###############
+    start_time = time.time()
+    G,node_layer_name = visulization_traning.generate_MHAP_evl_graph(cluster_central,layer_mhaps,index_mhaps)
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    name = 'result/' +data_name+".gpickle"
+    nx.write_gpickle(G, name)
+    ############
+    start_time = time.time()
+    sample_cluster_mhap = visulization_traning.get_segmant_MHAP([8,5,3],node_layer_name,index_mhaps,7,10)
+    time_data.append(time.time() - start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    #######################
+    graph_embaded = Graph_embading(G)
+    #graph_embaded.drwa_graph()
+    node_names = graph_embaded.get_node_list()
+    walks_nodes = graph_embaded.randome_walk_nodes(node_names)
+    #print(walks_nodes)
+    embaded_graph = graph_embaded.embed_graph(walks_nodes)
+    graph_embaded.plot_embaded_graph(embaded_graph,node_names)
+    ###########
+    start_time = time.time()
+    new_feature = timeseries_embedding(embaded_graph,node_names,sample_cluster_mhap,7)
+    time_data.append(time.time() - start_time)
+    print("--- %s create embading seconds ---" % (time.time() - start_time))
+    
+    start_time = time.time()
+    x_train_feature = []
+    for m,data in enumerate (new_feature):
+        segmant = []
+        for j,seg in enumerate(data):
+            segmant.append(seg[0])
+        x_train_feature.append(segmant)
+    time_data.append(time.time() - start_time)
+    print("--- %s create new featureseconds ---" % (time.time() - start_time))
+    start_time = time.time()
+    #we need to convert the time series to 200*(15*100) as 2d to use xgboost)
+    x_train_new = []
+    for i, data in enumerate (x_train_feature):
+        seg = []
+        for j in (data):
+            for k in j:
+                seg.append(k)
+        x_train_new.append(seg)
+    time_data.append(time.time() - start_time)
+    print("--- %s create train featureseconds ---" % (time.time() - start_time))
+    #XGboost with 5 fold crosss validation
+    
+    y_training_1= np.argmax(y_training, axis=1)
+    model = xgb.XGBClassifier()
+    # evaluate the model
+    start_time = time.time()
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+    n_scores = cross_val_score(model, x_train_new, y_training_1, scoring='accuracy', cv=cv, n_jobs=-1)
+    print('Accuracy: %.3f (%.3f)' % (max(n_scores), std(n_scores)))
+    time_data.append(time.time() - start_time)
+    print("--- %s train xGboot featureseconds ---" % (time.time() - start_time))
+    
+    ##write for each dataset a file with accuercy and the time
+    name ='result/'+ data_name+".csv"
+    with open(name,'a') as fd:
+        wr = csv.writer(fd, dialect='excel')
+        wr.writerow(time_data)
+        wr.writerow(n_scores)
+
+    sys.modules[__name__].__dict__.clear()
 if __name__ == '__main__':
     run(sys.argv[1:])
