@@ -2,6 +2,9 @@ import random
 from sklearn.decomposition import PCA
 from gensim.models import Word2Vec
 import warnings
+from matplotlib import pyplot as plt
+import networkx as nx
+import numpy as np
 warnings.filterwarnings('ignore')
 
 class Graph_embading:
@@ -11,6 +14,7 @@ class Graph_embading:
     def save_graph(self,file_name):
         #initialze Figure
         graph = self.G
+        G = graph
         plt.figure(num=None, figsize=(20, 20))
         plt.axis('off')
         fig = plt.figure(1)
@@ -38,11 +42,11 @@ class Graph_embading:
         plt.ylim(0, ymax)
 
         plt.savefig(file_name,bbox_inches="tight")
-        pylab.show()
+        plt.show()
         del fig
 
         #Assuming that the graph g has nodes and edges entered
-        save_graph(g,"my_graph.pdf")
+        #save_graph(G,"my_graph.pdf")
         
     def drwa_graph(self):
         # use one of the edge properties to control line thickness
@@ -50,7 +54,7 @@ class Graph_embading:
         # layout
         pos = nx.spring_layout(self.G)
         color_map = []
-        for node in G:
+        for node in self.G:
             layer0 = "layer0"
             layer1 = "layer1"
             layer2 = "layer2"
