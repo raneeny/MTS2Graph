@@ -3,4 +3,4 @@ MTS2Graph introduce a new framework for interpreting multivariate time series da
 
 To Install the dataset datasets link:http://www.mustafabaydogan.com/files/viewcategory/20-data-sets.html
 
-To run the code using python Train_example_dataset.py -f <foldar_name_data> -d <folder_path_of_data>
+To run the code using python Train_example_dataset.py -f <foldar_name_data> -d <dataset name>
