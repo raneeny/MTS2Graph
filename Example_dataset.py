@@ -89,7 +89,7 @@ def readData(data_name,dir_name):
  
     x_new1 = np.concatenate((x_train, x_test), axis=0)
     y_new1 = np.concatenate((y_train, y_test), axis=0)
-    x_training, x_validation, y_training, y_validation = train_test_split(x_new1, y_new1, test_size=0.20,shuffle=True)
+    x_training, x_validation, y_training, y_validation = train_test_split(x_new1, y_new1, test_size=0.80,shuffle=True)
     x_validation,x_test,y_validation,y_test = train_test_split(x_validation, y_validation, test_size=0.50,shuffle=True)
     print(x_training.shape)
     print(x_validation.shape)
