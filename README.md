@@ -4,4 +4,27 @@ MTS2Graph introduce a new framework for interpreting multivariate time series da
 
 Mustafa Baydogan's MTS datasets can be obtained from: http://www.mustafabaydogan.com/files/viewdownload/20-data-sets/69-multivariate-time-series-classification-data-sets-in-matlab-format.html or contact [Mustafa Baydogan](http://www.mustafabaydogan.com/contact/) 
 
+
+## Code
+The code is divided as follows:
+
+* The main.py python file contains the necessary code to run an experiement.
+* The FlySmote.py contains the necessary functions to apply fly-smote re-balancing method.
+* the NNModel.py contains the neural network model.
+* The ReadData.py file contains the necessary functions to read the datasets.
+
+To run a model on one dataset you should issue the following command:
+
+```bash
 To run the code using python Train_example_dataset.py -f <foldar_name_data> -d <dataset name>
+```
+
+## Prerequisites
+The python packages needed are:
+* numpy
+* pandas
+* sklearn
+* scipy
+* matplotlib
+* tensorflow
+* keras
