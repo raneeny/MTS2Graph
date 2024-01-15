@@ -112,7 +112,7 @@ class Graph_embading:
         # count of sequences
         return random_walks
     
-    def embed_graph(self,random_walks):
+    def embed_graph(self,random_walks,embedding_size):
         # train skip-gram (word2vec) model
         model_w2v = Word2Vec(window = 4, sg = 1, hs = 0,
                          negative = 10, # for negative sampling
