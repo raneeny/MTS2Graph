@@ -13,6 +13,7 @@ The code is divided as follows:
 * The ConvNet_Model.py contains the CNN-based neural network model.
 * The High_Activated_Filters_CNN.py contains the necessary functions to extract the MHAPs and build the graph.
 * The Graph_embading.py contains the necessary functions to apply graph embedding.
+* * The Data_Preprocessing.py contains the necessary functions to preprocess the data.
 
 To run a model on a dataset with the default parameters, you should issue the following command:
 
@@ -23,8 +24,11 @@ To run the code using python Example_dataset.py -f <foldar_name_data> -d <datase
 To set other hyperparameters
 
 -c or --cluster_numbers: Sets the cluster numbers as a comma-separated list (e.g., 35,25,15).
+
 -s or --segment_length: Sets the segment lengths (e.g.,10).
+
 -a or --activation_threshold: Sets the activation threshold (e.g., 0.95).
+
 -e or --embedding_size: Sets the embedding size (e.g., 100).
 
 ## Prerequisites
