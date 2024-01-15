@@ -46,7 +46,7 @@ class HighlyActivated:
         keras.backend.clear_session()        
         return y_pred
       
-    def define_threshould(self,activations):
+    def define_threshould(self,activations,activation_threshold=0.95):
         threshoulds = [[] for i in range(self.netLayers)]
         layer_data = [[] for i in range(self.netLayers)]
         ff = True
@@ -74,16 +74,16 @@ class HighlyActivated:
                 for i in range(0,activated_nodes.shape[2]):
                     Q3 = np.average(activated_nodes[:, :, i]) 
                     xx.append(Q3)
-                Q3 = np.percentile(xx,0.95)
+                Q3 = np.percentile(xx,activation_threshold)
                 layer_data[filter_index].append(Q3)
         
         return layer_data
     
-    def get_index_clustering_MHAP(self,activations,kernal_size=[]):
+    def get_index_clustering_MHAP(self,activations,kernal_size,activation_threshold):
         kernal_size= kernal_size
         filter_lists = [[] for i in range(self.netLayers)]
         period_active = []
-        threshoulds = self.define_threshould(activations)
+        threshoulds = self.define_threshould(activations,activation_threshold)
         #pool = mp.Pool(mp.cpu_count())
         #classes_lists_per[[] for i in range(self.netLayers)]
         layer_mhaps = []
