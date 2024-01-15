@@ -39,6 +39,7 @@ from joblib import Parallel, delayed
 import networkx as nx
 import csv
 import time
+import getopt
 np.random.seed(0)
 #import deepwalk
 def readData(data_name,dir_name):
@@ -316,20 +317,35 @@ def timeseries_embedding(embedding_graph,node_names,timesereis_MHAP,number_seg):
 def run(argv):
     data_name = ''
     dir_name = ''
+    cluster_numbers = [35, 25, 15]  # default values for cluster numbers
+    segment_length = 10  # default segment lengths
+    activation_threshold = 98  # default activation threshold
+    embedding_size = 100  # default embedding size
+    kernal_size=[8,5,3]
     try:
-      opts, args = getopt.getopt(argv,"hf:d:",["file_name=","directory_name="])
+        opts, args = getopt.getopt(argv, "hf:d:c:s:a:e:", ["file_name=", "directory_name=", "cluster_numbers=", "segment_length=", "activation_threshold=", "embedding_size="])
     except getopt.GetoptError:
-      print ('Train_example_dataset.py -f <file name> -d <directory name>')
-      sys.exit(2)
-    print (opts)
+        print('Train_example_dataset.py -f <file name> -d <directory name> -c <cluster numbers> -s <segment length> -a <activation threshold> -e <embedding size>')
+        sys.exit(2)
+
+    print(opts)
     for opt, arg in opts:
-      if opt == '-h':
-         print ('Train_example_dataset.py -f <file name> -d <directory name>')
-         sys.exit()
-      elif opt in ("-f", "--file"):
-         data_name = arg
-      elif opt in ("-d", "--directory"):
-         dir_name = arg
+        if opt == '-h':
+            print('Train_example_dataset.py -f <file name> -d <directory name> -c <cluster numbers> -s <segment length> -a <activation threshold> -e <embedding size>')
+            sys.exit()
+        elif opt in ("-f", "--file"):
+            data_name = arg
+        elif opt in ("-d", "--directory"):
+            dir_name = arg
+        elif opt in ("-c", "--cluster_numbers"):
+            cluster_numbers = list(map(int, arg.split(',')))
+        elif opt in ("-s", "--segment_length"):
+            segment_length = int(arg)
+        elif opt in ("-a", "--activation_threshold"):
+            activation_threshold = int(arg)
+        elif opt in ("-e", "--embedding_size"):
+            embedding_size = int(arg)
+
      
     #data_sets = ['ArabicDigits','AUSLAN','CharacterTrajectories','CMUsubject16','ECG','JapaneseVowels','KickvsPunch','Libras','NetFlow','PEMS','UWave','Wafer','WalkvsRun']
     #data_sets = ['Wafer','UWave','AUSLAN','HAR','ArabicDigits','NetFlow','PAMAP2']
@@ -347,13 +363,14 @@ def run(argv):
     time_data.append(time.time() - start_time)
     print("--- %s seconds ---" % (time.time() - start_time))
     #######
+    kernal_size=[8,5,3]
     visulization_traning = HighlyActivated(model,train_model,x_training,y_training,nb_classes,netLayers=3)
     start_time = time.time()
     activation_layers = visulization_traning.Activated_filters(example_id=1)
     time_data.append(time.time() - start_time)
     print("--- %s seconds ---" % (time.time() - start_time))
     start_time = time.time()
-    period_active,layer_mhaps,index_mhaps = visulization_traning.get_index_clustering_MHAP(activation_layers,kernal_size=[8,5,3])
+    period_active,layer_mhaps,index_mhaps = visulization_traning.get_index_clustering_MHAP(activation_layers,kernal_size,activation_threshold)
     time_data.append(time.time() - start_time)
     print("--- %s seconds ---" % (time.time() - start_time))
     ###################
@@ -386,7 +403,7 @@ def run(argv):
     clustering = Clustering(cluser_data_pre_list1)
     #cluser_data_pre_list1 = clustering.scale_data(cluser_data_pre_list1)
     clustering = Clustering(cluser_data_pre_list1)
-    cluster_central = clustering.cluster_sequence_data([35,25,15],[8,40,120],cluser_data_pre_list1)
+    cluster_central = clustering.cluster_sequence_data(cluster_numbers,[8,40,120],cluser_data_pre_list1)
     time_data.append(time.time() - start_time)
     print("--- %s seconds ---" % (time.time() - start_time))
     ###############
@@ -398,7 +415,7 @@ def run(argv):
     nx.write_gpickle(G, name)
     ############
     start_time = time.time()
-    sample_cluster_mhap = visulization_traning.get_segmant_MHAP([8,5,3],node_layer_name,index_mhaps,7,10)
+    sample_cluster_mhap = visulization_traning.get_segmant_MHAP([8,5,3],node_layer_name,index_mhaps,7,segment_length)
     time_data.append(time.time() - start_time)
     print("--- %s seconds ---" % (time.time() - start_time))
     #######################
@@ -407,7 +424,7 @@ def run(argv):
     node_names = graph_embaded.get_node_list()
     walks_nodes = graph_embaded.randome_walk_nodes(node_names)
     #print(walks_nodes)
-    embaded_graph = graph_embaded.embed_graph(walks_nodes)
+    embaded_graph = graph_embaded.embed_graph(walks_nodes,embedding_size)
     graph_embaded.plot_embaded_graph(embaded_graph,node_names)
     ###########
     start_time = time.time()
