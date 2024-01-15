@@ -14,7 +14,7 @@ The code is divided as follows:
 * The High_Activated_Filters_CNN.py contains the necessary functions to extract the MHAPs and build the graph.
 * The Graph_embading.py contains the necessary functions to apply graph embedding.
 
-To run a model on one dataset, you should issue the following command:
+To run a model on a dataset with the default parameters, you should issue the following command:
 
 ```bash
 To run the code using python Example_dataset.py -f <foldar_name_data> -d <dataset name>
