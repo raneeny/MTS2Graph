@@ -319,9 +319,9 @@ def run(argv):
     dir_name = ''
     cluster_numbers = [35, 25, 15]  # default values for cluster numbers
     segment_length = 10  # default segment lengths
-    activation_threshold = 98  # default activation threshold
+    activation_threshold = 0.95  # default activation threshold
     embedding_size = 100  # default embedding size
-    kernal_size=[8,5,3]
+    
     try:
         opts, args = getopt.getopt(argv, "hf:d:c:s:a:e:", ["file_name=", "directory_name=", "cluster_numbers=", "segment_length=", "activation_threshold=", "embedding_size="])
     except getopt.GetoptError:
