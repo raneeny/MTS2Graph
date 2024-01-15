@@ -31,6 +31,10 @@ To set other hyperparameters
 
 -e or --embedding_size: Sets the embedding size (e.g., 100).
 
+## Experement setup
+The FCN architecture used in MTS2Graph is comprised of three convolutional blocks with 32, 64, and 128 filters of varying lengths, ReLU activation functions, and batch normalization for regularization. 
+For all datasets, we used $80\%$ for training, 10$\%$ for validation, and 10$\%$ for test data. Each experiment is run for $500$ epochs, with $100$ embedding size, a segment length of size $10$, activation_threshold of 0.95 and cluster_numbers of 35,25,15.
+
 ## Prerequisites
 The python packages needed are:
 * numpy
