@@ -20,6 +20,13 @@ To run a model on a dataset with the default parameters, you should issue the fo
 To run the code using python Example_dataset.py -f <foldar_name_data> -d <dataset name>
 ```
 
+To set other hyperparameters
+
+-c or --cluster_numbers: Sets the cluster numbers as a comma-separated list (e.g., 35,25,15).
+-s or --segment_length: Sets the segment lengths (e.g.,10).
+-a or --activation_threshold: Sets the activation threshold (e.g., 0.95).
+-e or --embedding_size: Sets the embedding size (e.g., 100).
+
 ## Prerequisites
 The python packages needed are:
 * numpy
