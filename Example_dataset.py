@@ -11,7 +11,7 @@ from ConvNet_Model import ConvNet
 import numpy as np
 import tensorflow.keras as keras
 import sys, getopt
-from High_Activated_Filters_CNNcopy import HighlyActivated
+from High_Activated_Filters_CNN import HighlyActivated
 import pandas
 from itertools import *
 from  functools import *
