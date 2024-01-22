@@ -14,7 +14,7 @@ The code is divided as follows:
 * The High_Activated_Filters_CNN.py contains the necessary functions to extract the MHAPs and build the graph.
 * The Graph_embading.py contains the necessary functions to apply graph embedding.
 * The Data_Preprocessing.py contains the necessary functions to preprocess the data.
-* The /requirments.txt contains the list of python packages used in this work 
+* The Experements/requirments.txt contains the list of Python packages used in this work 
 
 To run a model on a dataset with the default parameters, you should issue the following command:
 
