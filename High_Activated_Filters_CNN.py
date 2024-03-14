@@ -30,54 +30,6 @@ class HighlyActivated:
         self.netLayers = netLayers
         self.train_model = train_model
         
-    def Activated_filters(self,example_id):
-        #layer_outputs = [layer.output for layer in self.model.layers[:self.netLayers+3]] 
-        layer_outputs = [layer.output for layer in self.model.layers[:self.netLayers+9]] 
-        # Extracts the outputs of the top n layers
-        # Creates a model that will return these outputs, given the model input
-        activation_model = keras.models.Model(inputs=self.model.input, outputs=layer_outputs) 
-        activations = activation_model.predict(self.x_test)
-        #shows the activated filters for each layer for an example    
-        return activations    
-    
-    def predect(self,y_true,x_test,model):
-        y_pred = model.predict(x_test)
-        y_pred = np.argmax(y_pred, axis=1)
-        keras.backend.clear_session()        
-        return y_pred
-      
-    def define_threshould(self,activations,activation_threshold=0.95):
-        threshoulds = [[] for i in range(self.netLayers)]
-        layer_data = [[] for i in range(self.netLayers)]
-        ff = True
-        activated_id = 1
-        filter_index = 0
-        for l in range(1,self.netLayers+9):
-            flag = False
-            #get the id of the filter layer
-            if(l == 3):
-                activated_id = 0
-                filter_index = 0
-                flag = True                    
-            elif(l==6):
-                activated_id = 1
-                filter_index = 1
-                flag = True  
-            elif(l==9):
-                activated_id = 2
-                filter_index = 2
-                flag = True
-            #so make sure that we only have the id of conv layer
-            if(flag):
-                activated_nodes = activations[l]
-                xx = []
-                for i in range(0,activated_nodes.shape[2]):
-                    Q3 = np.average(activated_nodes[:, :, i]) 
-                    xx.append(Q3)
-                Q3 = np.percentile(xx,activation_threshold)
-                layer_data[filter_index].append(Q3)
-        
-        return layer_data
     
     def get_index_clustering_MHAP(self,activations,kernal_size,activation_threshold):
         kernal_size= kernal_size
@@ -194,50 +146,3 @@ class HighlyActivated:
             node_layer_name.append(sample_layer_node)
         return graph,node_layer_name  
     
-    def get_segmant_MHAP_par(self,j,kernal_size,node_layer_name,index_mhaps,n,sgmant_lenth,intervals):
-        print(j)
-        #for each data sample return its segment representation
-        segmant = [[] for i in range(n)]
-        for l in range(len(index_mhaps[j])):
-            for m in range(len(index_mhaps[j][l])):
-                for f in range(len(index_mhaps[j][l][m])):
-                    index_k = index_mhaps[j][l][m][f]
-                    index_segma = bisect.bisect_left(intervals, index_k)-1
-                    name_node = node_layer_name[j][l][m][f]
-                    segmant[index_segma].extend(name_node)
-        return segmant
-    
-    def get_segmant_MHAP(self,kernal_size,node_layer_name,index_mhaps,n,sgmant_lenth):
-        #kernal_size = [8,5,3]
-        #loop through each training sample
-        sgmant_lenth = sgmant_lenth
-        start = 0
-        n = n
-        sgmant_lenth = sgmant_lenth
-        intervals = np.arange(start, sgmant_lenth * n , sgmant_lenth)
-        #print(intervals)
-        results = []
-        #loop through each training sample
-        results = Parallel(n_jobs=100,backend="threading")(delayed(self.get_segmant_MHAP_par)(j,kernal_size,node_layer_name,index_mhaps,n,sgmant_lenth,intervals) for j in range(len(self.x_test)))
-        return results
-    
-    def fitted_cluster(self,data,cluster):
-        data = np.linalg.norm(data[0])
-        cluster[0] = np.linalg.norm(cluster[0][0])
-        mini =0
-        if(np.isnan(cluster[0]).any() == False & np.isinf(cluster[0]).any() == False):
-            mini = distance.euclidean(data,cluster[0])
-        cluster_id = 0
-        count = 0
-        for i in (cluster):
-            clu_nor = np.linalg.norm(i)
-            #print(clu_nor)
-            #print(data)
-            if(np.isnan(clu_nor).any() == False & np.isinf(clu_nor).any() == False):
-                dist = distance.euclidean(data,clu_nor)
-                if(dist < mini):
-                    cluster_id = count
-                    mini = dist
-                count+=1
-        
-        return cluster_id
